@@ -19,4 +19,4 @@ spec:
     spec:
       containers:
       - name: python-container
-        image: acrdevgitops2026.azurecr.io/gitops-app:v2
+        image: acrdevgitops2026.azurecr.io/gitops-app:b81e60c7a0070e33fa21ee6a0f4f68727ddde79e
