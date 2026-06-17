@@ -1,0 +1,38 @@
+name: CI - Build and Push
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and Push image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/gitops-app:${{ github.sha }} ./app
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/gitops-app:${{ github.sha }}
+
+      - name: Update deployment manifest
+        run: |
+          sed -i "s|image: .*|image: ${{ secrets.ACR_LOGIN_SERVER }}/gitops-app:${{ github.sha }}|" k8s/apps/deployment.yaml
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add k8s/apps/deployment.yaml
+          git commit -m "ci: update image tag to ${{ github.sha }}"
+          git push
